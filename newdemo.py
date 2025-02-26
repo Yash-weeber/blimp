@@ -5,8 +5,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
-from picamera import PiCamera
-from picamera.array import PiRGBArray
+# from picamera import PiCamera
+# from picamera.array import PiRGBArray
 import math
 import time
 
@@ -26,9 +26,9 @@ TOLERANCE = 0.1  # 10% tolerance
 # ===============================
 # Training Data Directories & Model Path
 # ===============================
-TRAIN_DIR = "E:/balloon_train/"  # Change these directories to your training data folders
-VALID_DIR = "E:/balloon_val/"
-MODEL_PATH = "balloon_detection_model.h5"
+TRAIN_DIR = "E:/blimptrain/"
+VALID_DIR = "E:/blimpval/"
+MODEL_PATH = "balloon_detection_modelpart2.h5"
 
 # ===============================
 # Model Training Function
@@ -36,20 +36,45 @@ MODEL_PATH = "balloon_detection_model.h5"
 def train_balloon_model():
     datagen = ImageDataGenerator(rescale=1.0 / 255.0)
     
+    # train_generator = datagen.flow_from_directory(
+    #     TRAIN_DIR,
+    #     target_size=(64, 64),
+    #     batch_size=4,
+    #     class_mode="binary",
+    # )
+    #
+    # validation_generator = datagen.flow_from_directory(
+    #     VALID_DIR,
+    #     target_size=(64, 64),
+    #     batch_size=32,
+    #     class_mode="binary",
+    # )
     train_generator = datagen.flow_from_directory(
         TRAIN_DIR,
         target_size=(64, 64),
-        batch_size=32,
-        class_mode="binary",
+        batch_size=4,
+        class_mode="categorical",
     )
-    
+
     validation_generator = datagen.flow_from_directory(
         VALID_DIR,
         target_size=(64, 64),
-        batch_size=32,
-        class_mode="binary",
+        batch_size=4,
+        class_mode="categorical",
     )
-    
+
+    # model = Sequential([
+    #     Conv2D(32, (3, 3), activation="relu", input_shape=(64, 64, 3)),
+    #     MaxPooling2D(2, 2),
+    #     Conv2D(64, (3, 3), activation="relu"),
+    #     MaxPooling2D(2, 2),
+    #     Flatten(),
+    #     Dense(128, activation="relu"),
+    #     Dropout(0.5),
+    #     Dense(1, activation="sigmoid"),
+    # ])
+    #
+    # model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
     model = Sequential([
         Conv2D(32, (3, 3), activation="relu", input_shape=(64, 64, 3)),
         MaxPooling2D(2, 2),
@@ -58,17 +83,17 @@ def train_balloon_model():
         Flatten(),
         Dense(128, activation="relu"),
         Dropout(0.5),
-        Dense(1, activation="sigmoid"),
+        Dense(4, activation="softmax"),  # 4 neurons for 4 classes
     ])
-    
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
-    
+
+    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+
     model.fit(
         train_generator,
         steps_per_epoch=train_generator.samples // train_generator.batch_size,
         validation_data=validation_generator,
         validation_steps=validation_generator.samples // validation_generator.batch_size,
-        epochs=10,
+        epochs=1000,
     )
     
     model.save(MODEL_PATH)
@@ -153,7 +178,7 @@ def main():
     camera = PiCamera()
     camera.resolution = (FRAME_WIDTH_PIXELS, FRAME_HEIGHT_PIXELS)
     rawCapture = PiRGBArray(camera, size=(FRAME_WIDTH_PIXELS, FRAME_HEIGHT_PIXELS))
-    
+
     # Allow camera to warm up
     time.sleep(0.1)
     
