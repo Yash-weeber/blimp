@@ -47,14 +47,14 @@ def train_balloon_model():
     train_generator = datagen.flow_from_directory(
         TRAIN_DIR,
         target_size=(64, 64),
-        batch_size=4,
+        batch_size=8,
         class_mode="categorical",
     )
 
     validation_generator = datagen.flow_from_directory(
         VALID_DIR,
         target_size=(64, 64),
-        batch_size=4,
+        batch_size=8,
         class_mode="categorical",
     )
 
